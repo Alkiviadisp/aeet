@@ -25,6 +25,16 @@ interface WhisperLike {
   user_id: string;
 }
 
+interface WhisperData {
+  id: string;
+  content: string;
+  image_url: string | null;
+  created_at: string;
+  user_id: string;
+  profile?: Profile;
+  whisper_likes: WhisperLike[];
+}
+
 export const WhisperFeed = () => {
   const [whispers, setWhispers] = useState<Whisper[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +176,15 @@ export const WhisperFeed = () => {
       setCurrentUser(user?.id || null);
       console.log('Current user:', user?.id);
 
-      // First, get all whispers with basic data
+      // Get current user's profile
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+      console.log('Current user profile:', userProfile);
+
+      // Fetch all whispers with profiles
       const { data: whispersData, error: whispersError } = await supabase
         .from('whispers')
         .select(`
@@ -175,17 +193,21 @@ export const WhisperFeed = () => {
           image_url,
           created_at,
           user_id,
-          profiles (
-            id,
+          profiles!whispers_user_id_fkey (
             nickname,
             avatar_url
+          ),
+          whisper_likes (
+            user_id
           )
         `)
         .order('created_at', { ascending: false });
 
+      console.log('Raw whispers query result:', { whispersData, whispersError });
+
       if (whispersError) {
         console.error('Whispers fetch error:', whispersError);
-        throw whispersError;
+        throw new Error(`Failed to fetch whispers: ${JSON.stringify(whispersError)}`);
       }
 
       if (!whispersData) {
@@ -195,76 +217,44 @@ export const WhisperFeed = () => {
       }
 
       console.log('Raw whispers data:', whispersData);
-
-      // Get likes
-      const { data: likesData, error: likesError } = await supabase
-        .from('whisper_likes')
-        .select('whisper_id, user_id');
-
-      if (likesError) {
-        console.error('Error fetching likes:', likesError);
-      }
-      console.log('Likes data:', likesData);
-
-      // Create map for likes
-      const likesMap = new Map();
-
-      likesData?.forEach(like => {
-        const likes = likesMap.get(like.whisper_id) || [];
-        likes.push(like.user_id);
-        likesMap.set(like.whisper_id, likes);
+      console.log('Number of whispers found:', whispersData.length);
+      whispersData.forEach((whisper, index) => {
+        console.log(`Whisper ${index + 1}:`, {
+          id: whisper.id,
+          content: whisper.content,
+          user_id: whisper.user_id,
+          isCurrentUser: whisper.user_id === user?.id,
+          profile: whisper.profiles
+        });
       });
 
-      console.log('Likes map:', Object.fromEntries(likesMap));
+      // Process whispers
+      const processedWhispers = whispersData.map((whisper: any) => {
+        console.log('Processing whisper:', whisper);
+        const likes = whisper.whisper_likes || [];
+        const processed = {
+          id: whisper.id,
+          content: whisper.content,
+          image_url: whisper.image_url,
+          created_at: whisper.created_at,
+          user_id: whisper.user_id,
+          profile: {
+            nickname: whisper.profiles?.nickname || 'Unknown User',
+            avatar_url: whisper.profiles?.avatar_url || null
+          },
+          likes_count: likes.length,
+          is_liked: user ? likes.some((like: any) => like.user_id === user.id) : false
+        };
+        console.log('Processed whisper:', processed);
+        return processed;
+      });
 
-      // Filter out and delete empty whispers
-      const nonEmptyWhispers = whispersData
-        .filter(whisper => {
-          const isEmpty = !whisper.content?.trim() && !whisper.image_url;
-          if (isEmpty) {
-            console.log('Found empty whisper:', whisper.id);
-            deleteEmptyWhisper(whisper.id);
-          }
-          return !isEmpty;
-        })
-        .map(whisper => {
-          const likes = likesMap.get(whisper.id) || [];
-          
-          // Get profile data from the array
-          const profileData = Array.isArray(whisper.profiles) 
-            ? whisper.profiles[0] 
-            : whisper.profiles;
-
-          console.log('Processing whisper:', whisper.id, {
-            content: whisper.content,
-            profile: profileData,
-            likes: likes.length
-          });
-
-          // Ensure profile has the correct shape
-          const profile: Profile = {
-            nickname: profileData?.nickname || 'Unknown User',
-            avatar_url: profileData?.avatar_url || null
-          };
-          
-          return {
-            id: whisper.id,
-            content: whisper.content,
-            image_url: whisper.image_url,
-            created_at: whisper.created_at,
-            user_id: whisper.user_id,
-            profile,
-            likes_count: likes.length,
-            is_liked: likes.includes(user?.id)
-          };
-        });
-
-      console.log('Final processed whispers:', nonEmptyWhispers);
-      setWhispers(nonEmptyWhispers);
+      console.log('All processed whispers:', processedWhispers);
+      setWhispers(processedWhispers);
       setError(null);
     } catch (error: any) {
-      console.error('Detailed fetch error:', error);
-      setError(error.message || 'Failed to load whispers. Please try again.');
+      console.error('Error fetching whispers:', error);
+      setError(error.message || 'Failed to load whispers');
     } finally {
       setLoading(false);
     }

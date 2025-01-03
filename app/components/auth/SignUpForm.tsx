@@ -17,15 +17,13 @@ export const SignUpForm = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // 1. Sign up the user with metadata
+      // 1. Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            nickname: nickname,
-            display_name: nickname,
-            full_name: nickname,
+            nickname: nickname
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -34,39 +32,47 @@ export const SignUpForm = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // 2. Update or insert profile data
-        const { error: upsertError } = await supabase
+        // 2. Create profile
+        const { error: profileError } = await supabase
           .from('profiles')
-          .upsert({
+          .insert({
             id: authData.user.id,
             nickname: nickname,
             updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'id'
           });
 
-        if (upsertError) throw upsertError;
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw new Error('Failed to create profile');
+        }
 
         // 3. Upload avatar if selected
         if (avatar) {
           const fileExt = avatar.name.split('.').pop();
-          const fileName = `${authData.user.id}${Math.random()}.${fileExt}`;
-          const { error: uploadError, data: uploadData } = await supabase.storage
+          const fileName = `${authData.user.id}-${Date.now()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
             .from('avatars')
             .upload(fileName, avatar);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('Avatar upload error:', uploadError);
+            // Don't throw here, just log the error
+          } else {
+            // Update profile with avatar URL
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ 
+                avatar_url: fileName,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', authData.user.id);
 
-          // 4. Update profile with avatar URL
-          const { error: updateProfileError } = await supabase
-            .from('profiles')
-            .update({ 
-              avatar_url: uploadData.path,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', authData.user.id);
-
-          if (updateProfileError) throw updateProfileError;
+            if (updateError) {
+              console.error('Profile update error:', updateError);
+              // Don't throw here, just log the error
+            }
+          }
         }
 
         // Show success message or redirect
@@ -78,6 +84,7 @@ export const SignUpForm = () => {
         }
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       setError(error.message);
     }
   };

@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { ImagePlus, X } from 'lucide-react';
 
-export const WhisperForm = () => {
+interface WhisperFormProps {
+  onWhisperCreated?: () => void;
+}
+
+export const WhisperForm = ({ onWhisperCreated }: WhisperFormProps) => {
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -145,6 +149,9 @@ export const WhisperForm = () => {
       setContent('');
       setImage(null);
       setImagePreview(null);
+
+      // Trigger refresh of the feed
+      onWhisperCreated?.();
     } catch (error: any) {
       console.error('Detailed error:', error);
       setError(error.message || 'Failed to post whisper. Please try again.');
