@@ -65,9 +65,9 @@ export const Navbar = () => {
   const isActive = (path: string) => pathname === path;
 
   // Prevent hydration mismatch by not rendering transitions until mounted
-  const navClasses = `fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col cursor-pointer ${
-    isMounted ? 'transition-all duration-300 ease-in-out' : ''
-  } ${isOpen || isHovered ? 'w-64' : 'w-20'}`;
+  const navClasses = `fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col cursor-pointer z-50 ${
+    isMounted ? 'transition-all duration-500 ease-in-out transform-gpu' : ''
+  } ${isOpen || isHovered ? 'w-64 shadow-lg' : 'w-20'}`;
 
   return (
     <nav 
@@ -87,21 +87,25 @@ export const Navbar = () => {
                 href={item.href}
                 className={`flex items-center ${
                   isOpen || isHovered ? 'space-x-3' : 'justify-center'
-                } px-4 py-2 rounded-lg transition-colors ${
+                } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out ${
                   isActive(item.href)
                     ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {(isOpen || isHovered) && <span>{item.label}</span>}
+                <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-300 ease-in-out" />
+                {(isOpen || isHovered) && (
+                  <span className="transition-opacity duration-300 ease-in-out opacity-100">
+                    {item.label}
+                  </span>
+                )}
               </Link>
             );
           })}
         </div>
       </div>
 
-      <div>
+      <div className="transition-all duration-300 ease-in-out">
         <UserMenu isCollapsed={!isOpen && !isHovered} onToggle={() => setIsOpen(!isOpen)} />
       </div>
     </nav>
