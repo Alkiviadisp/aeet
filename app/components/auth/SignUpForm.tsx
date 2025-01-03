@@ -35,15 +35,18 @@ export const SignUpForm = () => {
         // 2. Create profile
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             id: authData.user.id,
             nickname: nickname,
-            updated_at: new Date().toISOString(),
-          });
+            avatar_url: null,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
-          throw new Error('Failed to create profile');
+          throw new Error(`Failed to create profile: ${profileError.message}`);
         }
 
         // 3. Upload avatar if selected
@@ -85,7 +88,7 @@ export const SignUpForm = () => {
       }
     } catch (error: any) {
       console.error('Signup error:', error);
-      setError(error.message);
+      setError(error.message || 'An error occurred during signup');
     }
   };
 
