@@ -10,12 +10,12 @@ interface NavbarContextType {
 const NavbarContext = createContext<NavbarContextType | undefined>(undefined);
 
 export function NavbarProvider({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Load initial state from localStorage
+    // Load initial state from localStorage, default to false (closed)
     const savedState = localStorage.getItem('navbarOpen');
-    setIsOpen(savedState === null ? true : savedState === 'true');
+    setIsOpen(savedState === null ? false : savedState === 'true');
   }, []);
 
   useEffect(() => {

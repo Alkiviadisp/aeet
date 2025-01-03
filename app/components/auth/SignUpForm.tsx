@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, User, Upload, UserPlus } from 'lucide-react';
+import { useNavbar } from '../navigation/NavbarContext';
 
 export const SignUpForm = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ export const SignUpForm = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { setIsOpen } = useNavbar();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +83,9 @@ export const SignUpForm = () => {
 
         // Show success message or redirect
         if (authData.session) {
+          // Ensure navbar is closed before redirecting
+          setIsOpen(false);
+          localStorage.setItem('navbarOpen', 'false');
           router.push('/dashboard');
           router.refresh();
         } else {

@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, LogIn } from 'lucide-react';
+import { useNavbar } from '../navigation/NavbarContext';
 
 export const SignInForm = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ export const SignInForm = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { setIsOpen } = useNavbar();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +25,8 @@ export const SignInForm = () => {
     if (error) {
       setError(error.message);
     } else {
+      setIsOpen(false);
+      localStorage.setItem('navbarOpen', 'false');
       router.push('/dashboard');
       router.refresh();
     }
