@@ -7,13 +7,18 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
+interface UserMenuProps {
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+}
+
 interface Profile {
   id: string;
   nickname: string;
   avatar_url: string | null;
 }
 
-export const UserMenu = () => {
+export const UserMenu = ({ isCollapsed = false, onToggle }: UserMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const router = useRouter();
@@ -94,10 +99,18 @@ export const UserMenu = () => {
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${profile.avatar_url}`;
   };
 
+  const handleClick = () => {
+    if (isCollapsed && onToggle) {
+      onToggle();
+    } else {
+      setIsOpen(!isOpen);
+    }
+  };
+
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleClick}
         className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center overflow-hidden">
@@ -111,10 +124,12 @@ export const UserMenu = () => {
             <User className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
           )}
         </div>
-        <span className="text-gray-700 dark:text-gray-300">{profile?.nickname}</span>
+        {!isCollapsed && (
+          <span className="text-gray-700 dark:text-gray-300">{profile?.nickname}</span>
+        )}
       </button>
 
-      {isOpen && (
+      {isOpen && !isCollapsed && (
         <div className="absolute bottom-full left-0 mb-2 w-48 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
           <Link
             href="/profile"
