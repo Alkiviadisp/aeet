@@ -10,18 +10,25 @@ interface NavbarContextType {
 const NavbarContext = createContext<NavbarContextType | undefined>(undefined);
 
 export function NavbarProvider({ children }: { children: React.ReactNode }) {
+  // Start with a default state that matches the server
   const [isOpen, setIsOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Load initial state from localStorage, default to false (closed)
+    // Only run on client-side after initial render
     const savedState = localStorage.getItem('navbarOpen');
-    setIsOpen(savedState === null ? false : savedState === 'true');
+    if (savedState !== null) {
+      setIsOpen(savedState === 'true');
+    }
+    setIsInitialized(true);
   }, []);
 
   useEffect(() => {
-    // Save state to localStorage whenever it changes
-    localStorage.setItem('navbarOpen', isOpen.toString());
-  }, [isOpen]);
+    // Only save to localStorage after initialization
+    if (isInitialized) {
+      localStorage.setItem('navbarOpen', isOpen.toString());
+    }
+  }, [isOpen, isInitialized]);
 
   return (
     <NavbarContext.Provider value={{ isOpen, setIsOpen }}>
