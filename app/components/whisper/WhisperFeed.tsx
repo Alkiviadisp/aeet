@@ -370,33 +370,33 @@ export const WhisperFeed = () => {
               <p className="mt-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                 {whisper.content}
               </p>
-              {whisper.image_url && getImageUrl(whisper.image_url) && (
-                <div className="mt-4">
-                  <img
-                    src={getImageUrl(whisper.image_url)!}
-                    alt="Whisper attachment"
-                    className="rounded-lg max-h-96 object-cover"
-                    onError={async () => {
-                      console.log('Image failed to load, cleaning up:', whisper.image_url);
-                      await cleanupMissingImage(whisper.id);
-                    }}
-                  />
-                </div>
-              )}
-              <div className="mt-4 flex items-center">
-                <button 
-                  onClick={() => handleLike(whisper.id)}
-                  className={`flex items-center space-x-2 transition-colors ${
-                    whisper.is_liked 
-                      ? 'text-red-500 dark:text-red-400' 
-                      : 'text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400'
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 ${whisper.is_liked ? 'fill-current' : ''}`} />
-                  <span className="text-sm">{whisper.likes_count} {whisper.likes_count === 1 ? 'like' : 'likes'}</span>
-                </button>
-              </div>
             </div>
+          </div>
+          {whisper.image_url && getImageUrl(whisper.image_url) && (
+            <div className="mt-4 flex justify-center w-full">
+              <img
+                src={getImageUrl(whisper.image_url)!}
+                alt="Whisper attachment"
+                className="rounded-lg max-h-96 w-auto max-w-full object-contain"
+                onError={async () => {
+                  console.log('Image failed to load, cleaning up:', whisper.image_url);
+                  await cleanupMissingImage(whisper.id);
+                }}
+              />
+            </div>
+          )}
+          <div className="mt-4 flex items-center">
+            <button 
+              onClick={() => handleLike(whisper.id)}
+              className={`flex items-center space-x-2 transition-colors ${
+                whisper.is_liked 
+                  ? 'text-red-500 dark:text-red-400' 
+                  : 'text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400'
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${whisper.is_liked ? 'fill-current' : ''}`} />
+              <span className="text-sm">{whisper.likes_count} {whisper.likes_count === 1 ? 'like' : 'likes'}</span>
+            </button>
           </div>
         </article>
       ))}
